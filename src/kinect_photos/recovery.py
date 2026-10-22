@@ -8,14 +8,21 @@ from pathlib import Path
 import re
 import stat
 import tempfile
-from typing import Callable
+from typing import Callable, TYPE_CHECKING
 
-from .jpeg import MAX_FILE_BYTES, scan_jpegs
+from .jpeg import MAX_FILE_BYTES, Photo, scan_jpegs
+
+if TYPE_CHECKING:
+    from .catalog import PhotoCatalog
 
 TITLE_ID = bytes.fromhex('4d5308ed')
 HEADER_SIZE = 0x364
 MAX_CANDIDATES = 20_000
 MAX_ISSUES = 200
+
+
+class OperationCancelled(Exception):
+    """A user cancelled work at a safe file or image boundary."""
 
 
 @dataclass(frozen=True)
@@ -47,9 +54,10 @@ class RecoveryReport:
     discovery_issue_count: int = 0
     discovery_issues: tuple[str, ...] = ()
     files: list[FileResult] = field(default_factory=list)
+    cancelled: bool = False
 
 
-def _candidate(name: str, header: bytes) -> bool:
+def is_photo_candidate(name: str, header: bytes) -> bool:
     lower = name.casefold()
     if lower == 'gameprogress' or lower.startswith('souvenirrecording'):
         return False
@@ -66,7 +74,9 @@ def _reparse(path: Path) -> bool:
     )
 
 
-def discover(root: Path, output: Path) -> Discovery:
+def discover(root: Path, output: Path | None = None, *,
+             cancelled: Callable[[], bool] = lambda: False,
+             progress: Callable[[int, int], None] | None = None) -> Discovery:
     """Inspect bounded headers; skip links/junctions and the selected output tree."""
     files: list[Path] = []
     inspected = issue_count = 0
@@ -82,6 +92,8 @@ def discover(root: Path, output: Path) -> Discovery:
         issue(Path(exc.filename) if exc.filename else root)
 
     for directory, dirs, names in os.walk(root, followlinks=False, onerror=walk_error):
+        if cancelled():
+            raise OperationCancelled()
         parent = Path(directory)
         kept = []
         for name in sorted(dirs):
@@ -93,6 +105,8 @@ def discover(root: Path, output: Path) -> Discovery:
                 issue(path)
         dirs[:] = kept
         for name in sorted(names):
+            if cancelled():
+                raise OperationCancelled()
             path = parent / name
             try:
                 if _reparse(path) or not path.is_file():
@@ -100,12 +114,14 @@ def discover(root: Path, output: Path) -> Discovery:
                 inspected += 1
                 with path.open('rb') as stream:
                     header = stream.read(HEADER_SIZE)
-                if _candidate(name, header):
+                if is_photo_candidate(name, header):
                     if len(files) >= MAX_CANDIDATES:
                         raise ValueError('candidate_limit')
                     files.append(path)
             except OSError:
                 issue(path)
+            if progress:
+                progress(inspected, len(files))
     return Discovery(tuple(files), inspected, tuple(issues), issue_count)
 
 
@@ -154,6 +170,19 @@ def _publish(output: Path, stem: str, extension: str, data: bytes) -> tuple[str,
             temp.unlink(missing_ok=True)
 
 
+def _save_photo(output: Path, source_name: str, number: int, photo: Photo, data: bytes,
+                record: FileResult, report: RecoveryReport) -> None:
+    stem = _safe_stem(source_name) + (f'_image_{number}' if number > 1 else '')
+    name, created = _publish(output, stem, '.jpg', data[photo.offset:photo.end])
+    record.photos.append({'name': name, 'offset': photo.offset,
+                          'length': photo.end - photo.offset,
+                          'width': photo.width, 'height': photo.height, 'created': created})
+    if created:
+        report.recovered += 1
+    else:
+        report.existing += 1
+
+
 def recover_folder(input_folder: Path, output_folder: Path, *, version: str = '',
                    progress: Callable[[int, int], None] | None = None) -> tuple[RecoveryReport, Path]:
     """Recursively discover photos, publish JPGs, and save a bounded local report."""
@@ -171,21 +200,12 @@ def recover_folder(input_folder: Path, output_folder: Path, *, version: str = ''
         try:
             with source.open('rb') as stream:
                 data = stream.read(MAX_FILE_BYTES + 1)
-            if not _candidate(source.name, data[:HEADER_SIZE]):
+            if not is_photo_candidate(source.name, data[:HEADER_SIZE]):
                 raise ValueError('source_changed')
             result = scan_jpegs(data)
             record.rejected_candidates = result.rejected_candidates
             for number, photo in enumerate(result.photos, 1):
-                stem = _safe_stem(source.name) + (f'_image_{number}' if number > 1 else '')
-                name, created = _publish(output, stem, '.jpg', data[photo.offset:photo.end])
-                record.photos.append({'name': name, 'offset': photo.offset,
-                                      'length': photo.end - photo.offset,
-                                      'width': photo.width, 'height': photo.height,
-                                      'created': created})
-                if created:
-                    report.recovered += 1
-                else:
-                    report.existing += 1
+                _save_photo(output, source.name, number, photo, data, record, report)
             if not result.photos:
                 report.skipped += 1
         except ValueError as exc:
@@ -198,5 +218,63 @@ def recover_folder(input_folder: Path, output_folder: Path, *, version: str = ''
         if progress is not None:
             progress(index, len(found.files))
     encoded = json.dumps(asdict(report), ensure_ascii=True, indent=2).encode('utf-8')
+    name, _ = _publish(output, 'recovery-report', '.json', encoded)
+    return report, output / name
+
+
+def recover_selection(catalog: 'PhotoCatalog', selected: tuple[int, ...], output_folder: Path,
+                      *, version: str = '', cancelled: Callable[[], bool] = lambda: False,
+                      progress: Callable[[int, int], None] | None = None) -> tuple[RecoveryReport, Path]:
+    """Save only checked photos; reject changed sources and retain partial outcomes."""
+    from .catalog import read_source
+
+    if not selected:
+        raise ValueError('no_selection')
+    if any(type(index) is not int or index < 0 or index >= len(catalog.photos) for index in selected):
+        raise ValueError('invalid_selection')
+    indices = sorted(set(selected))
+    output = output_folder.resolve()
+    if output == catalog.root:
+        raise ValueError('same_folders')
+    output.mkdir(parents=True, exist_ok=True)
+    report = RecoveryReport(version=version, inspected=catalog.inspected,
+                            discovery_issues=catalog.discovery_issues,
+                            discovery_issue_count=catalog.discovery_issue_count)
+    grouped: dict[Path, list] = {}
+    for index in indices:
+        entry = catalog.photos[index]
+        grouped.setdefault(entry.source.path, []).append(entry)
+    done = 0
+    for entries in grouped.values():
+        if cancelled():
+            report.cancelled = True
+            break
+        source = entries[0].source
+        record = FileResult(source.relative)
+        try:
+            data = read_source(source)
+            for entry in entries:
+                if cancelled():
+                    report.cancelled = True
+                    break
+                _save_photo(output, source.path.name, entry.number, entry.image, data, record, report)
+                done += 1
+                if progress:
+                    progress(done, len(indices))
+        except ValueError as exc:
+            record.error = str(exc)
+        except OSError:
+            record.error = 'file_io_error'
+        if record.error:
+            report.failed += 1
+            done += len(entries) - len(record.photos)
+            if progress:
+                progress(done, len(indices))
+        report.files.append(record)
+        if report.cancelled:
+            break
+    payload = asdict(report)
+    payload['scan_issues'] = [asdict(issue) for issue in catalog.issues]
+    encoded = json.dumps(payload, ensure_ascii=True, indent=2).encode('utf-8')
     name, _ = _publish(output, 'recovery-report', '.json', encoded)
     return report, output / name

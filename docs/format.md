@@ -89,6 +89,22 @@ standard Windows argument encoder. A regression test passes actual Gooey folder
 formatting through a real shell-free child process with drive roots, trailing
 separators, spaces, Unicode, and shell metacharacters.
 
+## Photo catalog and selection API
+
+`catalog.scan_folder` inventories complete JPEG ranges before export and records
+source SHA-256 snapshots. `read_photo` and `recovery.recover_selection` reject a
+changed source rather than using stale offsets. Export accepts checked catalog
+indices, preserves each image's original ordinal in multi-image files, and
+uses the same atomic publication and collision rules as whole-folder recovery.
+Cancellation stops between files/images and saves an honest partial report.
+
+The catalog prefers dates encoded in `PM9_<player>_<year>_<month>_<day>_<hour>_<minute>_<second>_<millisecond>`
+filenames. These reflect the console clock, not independently verified capture
+times. Invalid or missing name dates fall back to the file-modified timestamp,
+with distinct provenance; a copied backup's modification date can differ from
+the photo date. Invented dates are never substituted. Catalogs contain at most
+20,000 photos; input sizes and individual JPEG limits remain unchanged.
+
 ## Optional ZIP CLI
 
 The JPEG parser returns immutable photo ranges and a rejected-candidate count. CLI input
