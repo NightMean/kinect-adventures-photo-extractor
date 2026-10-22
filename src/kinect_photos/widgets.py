@@ -9,6 +9,7 @@ from .preview import PreviewPixels
 INK = '#24352b'
 MUTED = '#627064'
 SURFACE = '#f3f6f2'
+ERROR_SURFACE = '#ffe1dd'
 
 
 class PhotoList(wx.ListCtrl):

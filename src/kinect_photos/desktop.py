@@ -11,7 +11,7 @@ from .dialogs import show_about, show_details, show_guide
 from .identity import app_identity
 from .jobs import BackgroundJobs, Progress
 from .recovery import recover_selection
-from .widgets import INK, MUTED, PhotoList, PhotoPreview
+from .widgets import ERROR_SURFACE, INK, MUTED, PhotoList, PhotoPreview
 
 
 def _key(entry):
@@ -57,6 +57,7 @@ class MainFrame(wx.Frame):
         folders.AddGrowableCol(1)
         self.input_field = wx.TextCtrl(panel, style=wx.TE_READONLY)
         self.output_field = wx.TextCtrl(panel, style=wx.TE_READONLY)
+        self.output_background = self.output_field.GetBackgroundColour()
         self.input_field.SetName(TEXT['input_label'])
         self.output_field.SetName(TEXT['output_label'])
         self.input_button = wx.Button(panel, label=TEXT['choose_input'])
@@ -103,15 +104,18 @@ class MainFrame(wx.Frame):
         right.Add(self.preview_name, 0, wx.TOP | wx.EXPAND, 9)
         columns.Add(right, 1, wx.EXPAND)
         layout.Add(columns, 1, wx.EXPAND)
+        self.metadata_checkbox = wx.CheckBox(panel, label=TEXT['embed_date_label'])
+        self.metadata_checkbox.SetValue(True)
+        self.metadata_checkbox.SetToolTip(TEXT['embed_date_tooltip'])
         self.progress = wx.Gauge(panel, range=1000)
         layout.Add(self.progress, 0, wx.EXPAND | wx.TOP, 18)
         bottom = wx.BoxSizer(wx.HORIZONTAL)
         self.status = wx.StaticText(panel, label=TEXT['choose_to_scan'])
         bottom.Add(self.status, 1, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
+        bottom.Add(self.metadata_checkbox, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 8)
         self.details_button = wx.Button(panel, label=TEXT['details_button'])
         self.cancel_button = wx.Button(panel, label=TEXT['stop_button'])
         self.export_button = wx.Button(panel, label=TEXT['export_selected'])
-        self.export_button.SetFont(panel.GetFont().Bold())
         self.export_button.SetDefault()
         self.details_button.Bind(wx.EVT_BUTTON, self._details)
         self.cancel_button.Bind(wx.EVT_BUTTON, self._cancel)
@@ -139,6 +143,8 @@ class MainFrame(wx.Frame):
         previous = Path(self.output_field.Value).resolve() if self.output_field.Value else None
         output = path.resolve()
         self.output_field.ChangeValue(str(output))
+        self.output_field.SetBackgroundColour(self.output_background)
+        self.output_field.Refresh()
         if self.catalog and (output.is_relative_to(self.catalog.root) or
                              (previous and previous.is_relative_to(self.catalog.root))):
             self.load_folder(self.catalog.root)
@@ -193,6 +199,7 @@ class MainFrame(wx.Frame):
         self.export_button.SetToolTip(self._export_requirement() or TEXT['export_tooltip'])
         self.cancel_button.Enable(self.busy and not self.jobs.stop.is_set())
         self.details_button.Enable(bool(self.last_details) and not self.busy)
+        self.metadata_checkbox.Enable(not self.busy)
 
     def _preview(self, index):
         if self.busy or self.catalog is None:
@@ -218,12 +225,16 @@ class MainFrame(wx.Frame):
             return
         requirement = self._export_requirement()
         if requirement:
-            self.status.SetLabel(requirement)
+            if not self.output_field.Value:
+                self.output_field.SetBackgroundColour(ERROR_SURFACE)
+                self.output_field.Refresh()
+            wx.MessageBox(requirement, TEXT['export_requirement_title'], wx.OK | wx.ICON_WARNING, self)
             if not self.output_field.Value:
                 self.output_button.SetFocus()
             return
         catalog = self.catalog
         selected = tuple(sorted(self.photo_list.view.checked_indices))
+        embed_dates = self.metadata_checkbox.Value
         output = Path(self.output_field.Value)
         if any(catalog.photos[i].source.path.is_relative_to(output.resolve()) for i in selected) and output.resolve().is_relative_to(catalog.root):
             self.load_folder(catalog.root)
@@ -233,6 +244,7 @@ class MainFrame(wx.Frame):
         self.preview_token = 0
         def export():
             return recover_selection(catalog, selected, output, version=app_identity().version,
+                                     embed_dates=embed_dates,
                                      cancelled=self.jobs.stop.is_set,
                                      progress=lambda n, total: self.jobs.publish_progress(Progress('export', n, total)))
         self.jobs.start('export', export)

@@ -171,11 +171,18 @@ def _publish(output: Path, stem: str, extension: str, data: bytes) -> tuple[str,
 
 
 def _save_photo(output: Path, source_name: str, number: int, photo: Photo, data: bytes,
-                record: FileResult, report: RecoveryReport) -> None:
+                record: FileResult, report: RecoveryReport, capture_date: datetime | None = None) -> None:
     stem = _safe_stem(source_name) + (f'_image_{number}' if number > 1 else '')
-    name, created = _publish(output, stem, '.jpg', data[photo.offset:photo.end])
+    encoded = data[photo.offset:photo.end]
+    if capture_date is not None:
+        from .capture_metadata import embed_capture_date
+        encoded = embed_capture_date(encoded, capture_date)
+    name, created = _publish(output, stem, '.jpg', encoded)
     record.photos.append({'name': name, 'offset': photo.offset,
                           'length': photo.end - photo.offset,
+                          'saved_length': len(encoded),
+                          'metadata_embedded': capture_date is not None,
+                          'capture_date': capture_date.isoformat(timespec='milliseconds') if capture_date is not None else None,
                           'width': photo.width, 'height': photo.height, 'created': created})
     if created:
         report.recovered += 1
@@ -224,6 +231,7 @@ def recover_folder(input_folder: Path, output_folder: Path, *, version: str = ''
 
 def recover_selection(catalog: 'PhotoCatalog', selected: tuple[int, ...], output_folder: Path,
                       *, version: str = '', cancelled: Callable[[], bool] = lambda: False,
+                      embed_dates: bool = False,
                       progress: Callable[[int, int], None] | None = None) -> tuple[RecoveryReport, Path]:
     """Save only checked photos; reject changed sources and retain partial outcomes."""
     from .catalog import read_source
@@ -257,7 +265,8 @@ def recover_selection(catalog: 'PhotoCatalog', selected: tuple[int, ...], output
                 if cancelled():
                     report.cancelled = True
                     break
-                _save_photo(output, source.path.name, entry.number, entry.image, data, record, report)
+                capture_date = entry.date if embed_dates and entry.date_source == 'filename' else None
+                _save_photo(output, source.path.name, entry.number, entry.image, data, record, report, capture_date)
                 done += 1
                 if progress:
                     progress(done, len(indices))

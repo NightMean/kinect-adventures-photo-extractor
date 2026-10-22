@@ -54,7 +54,13 @@ class DesktopTests(unittest.TestCase):
                 self.assertFalse(hasattr(frame, 'preview_date'))
                 self.assertFalse(hasattr(frame, 'preview_source'))
                 self.assertEqual(frame.input_button.Size, frame.output_button.Size)
+                self.assertEqual(frame.metadata_checkbox.Position.y + frame.metadata_checkbox.Size.height // 2,
+                                 frame.details_button.Position.y + frame.details_button.Size.height // 2)
+                self.assertLess(frame.metadata_checkbox.Position.x, frame.details_button.Position.x)
+                self.assertEqual(frame.export_button.GetFont().GetWeight(), wx.FONTWEIGHT_NORMAL)
                 self.assertTrue(frame.GetIcon().IsOk())
+                self.assertTrue(frame.metadata_checkbox.Value)
+                self.assertIn('Xbox clock', frame.metadata_checkbox.GetToolTipText())
                 click(frame.none_button)
                 self.assertEqual(frame.photo_list.view.checked_indices, set())
                 self.assertIn('Select at least one', frame.export_button.GetToolTipText())
@@ -89,18 +95,32 @@ class DesktopTests(unittest.TestCase):
                 self.assertEqual(len(list(output.glob('*.jpg'))), 2)
                 self.assertTrue((output / 'PM9_0_2010_12_28_17_54_36_57_image_2.jpg').exists())
                 self.assertFalse((output / 'PM9_0_2010_12_28_17_54_36_57.jpg').exists())
-                for photo in output.glob('*.jpg'):
-                    self.assertEqual(photo.read_bytes(), data)
+                from io import BytesIO
+                from PIL import Image
+                dated = output / 'PM9_0_2010_12_28_17_54_36_57_image_2.jpg'
+                with Image.open(dated) as exported, Image.open(BytesIO(data)) as original:
+                    self.assertEqual(exported.getexif().get_ifd(0x8769)[0x9003], '2010:12:28 17:54:36')
+                    self.assertEqual(exported.tobytes(), original.tobytes())
+                self.assertEqual((output / 'PM9_other.jpg').read_bytes(), data)
                 self.assertEqual(frame.progress.Value, 1000)
                 self.assertEqual(frame.Title, 'Kinect Adventures Photo Extractor')
                 self.assertTrue(frame.report_path.exists())
+                frame.metadata_checkbox.SetValue(False)
+                click(frame.export_button)
+                pump(lambda: not frame.busy)
+                self.assertEqual((output / 'PM9_0_2010_12_28_17_54_36_57_image_2_2.jpg').read_bytes(), data)
                 frame.output_field.ChangeValue('')
                 frame._update_actions()
                 self.assertTrue(frame.export_button.IsEnabled())
                 self.assertIn('Choose an export folder', frame.export_button.GetToolTipText())
+                normal_colour = frame.output_field.GetBackgroundColour()
                 click(frame.export_button)
                 self.assertFalse(frame.busy)
-                self.assertIn('Choose an export folder', frame.status.Label)
+                self.assertEqual(len(messages), 1)
+                self.assertIn('Choose an export folder', messages.pop())
+                self.assertNotEqual(frame.output_field.GetBackgroundColour(), normal_colour)
+                frame.set_output(output)
+                self.assertEqual(frame.output_field.GetBackgroundColour(), normal_colour)
                 from kinect_photos.dialogs import AboutDialog
                 with AboutDialog(frame) as about:
                     about.Show()

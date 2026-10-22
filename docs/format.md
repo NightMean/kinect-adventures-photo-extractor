@@ -24,7 +24,8 @@ until EOI. Segment contents may themselves contain SOI/EOI (e.g. EXIF thumbnails
 so blindly taking the first EOI is incorrect. Multiple scans and multiple
 separate JPEGs are supported. Only complete streams with a frame and scan are
 returned; pixel decoding is a separate verification step. Output is the exact
-source byte range, without re-encoding, header repair, or recompression.
+source byte range, without re-encoding, header repair, or recompression. The desktop
+option described below can subsequently add filename-derived EXIF metadata.
 
 Known supported inputs: exported individual Kinect Adventures photo save files,
 including extensionless `PM9_*` files inside `Content/.../4D5308ED/00000001`.
@@ -70,7 +71,10 @@ focused photo identity survive both column orders. Dates sort by their displayed
 wall-clock values because console filename dates have no known timezone; unknown
 dates stay last. Space toggles the focused checkbox explicitly in the virtual list.
 Preview captions contain only the filename. Help owns export guidance and About;
-the idle export button remains hoverable to explain missing prerequisites.
+the idle export button remains hoverable to explain missing prerequisites. An
+early click opens a warning; a missing export-folder field turns red and returns
+to its native colour when a folder is chosen. The metadata checkbox shares the
+bottom action row immediately before Details.
 
 Recovered JPGs retain source names with portable character sanitization.
 Duplicate names get suffixes; exact matching output bytes are reused on reruns.
@@ -101,6 +105,38 @@ invocations retain stdout without leaving a console on screen for desktop users.
 Arguments invoke the headless folder workflow; no arguments open the GUI. Git
 identity is injected internally by the build spec; About shows the release version,
 author, and repository link without a commit suffix.
+
+## Optional filename capture metadata
+
+The desktop checkbox **Embed photo date** defaults on. Only valid filename dates
+qualify; modified-file timestamps and unknown dates do not. Unchecked exports,
+the folder CLI, ZIP CLI, and `recover_selection`'s default remain byte-exact.
+`recover_selection(..., embed_dates=True)` enables the same transformation as the UI.
+
+`capture_metadata.embed_capture_date` inserts or updates a header APP1 EXIF
+segment, leaving the remaining JPEG bytes untouched, including all compressed
+scans. The EXIF fields are IFD0 DateTime plus ExifIFD DateTimeOriginal and
+DateTimeDigitized, with SubSecTime, SubSecTimeOriginal and SubSecTimeDigitized.
+No timezone is inferred; existing UTC offset tags for these dates are removed.
+Tag definitions follow [CIPA EXIF](https://www.cipa.jp/std/documents/e/DC-008-2010_E.pdf).
+
+Existing TIFF data is kept at its original offsets; replacement directories are
+appended and only the TIFF root pointer is changed. This preserves thumbnail
+links, GPS data, opaque MakerNote bytes and other old directory entries. Both
+TIFF byte orders are supported. Pillow's `Exif.tobytes` was inspected and does
+not retain thumbnail IFD chains, so it is not used to rewrite existing EXIF.
+Duplicate header EXIF segments, invalid directory bounds and a final APP1 payload
+over 65,533 bytes fail explicitly before publishing that photo. The UI explains
+how to recover the original by unchecking the option. This is a bounded date
+editor, not a general EXIF repair tool.
+
+Reports retain original source `offset`/`length`, plus `saved_length`,
+`metadata_embedded` and an unzoned `capture_date` when applicable. Identical settings
+produce identical bytes and safe reruns; changing settings may produce a numbered
+copy. Source snapshots and all atomic publication/cancellation rules still apply.
+Tests verify tags through Pillow, unchanged decoded pixels and non-EXIF bytes,
+existing metadata/thumbnail offsets in both byte orders, fallback/disabled paths,
+malformed input, bounded random metadata and repeat exports.
 
 ## Photo catalog and selection API
 
