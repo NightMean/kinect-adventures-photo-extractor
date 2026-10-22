@@ -1,0 +1,19 @@
+{
+  "description": "Recover embedded Kinect Adventures photos into a ZIP. Inputs stay unchanged.",
+  "inputs_help": "exported Xbox photo files (any extension), or directories with --recursive",
+  "output_help": "new destination ZIP; existing files are never overwritten",
+  "recursive_help": "include files in input directories and their subdirectories",
+  "input_directory": "A directory requires --recursive: {path}",
+  "input_missing": "Input is not a regular file or directory: {path}",
+  "no_inputs": "No input files were found.",
+  "output_exists": "Output already exists; choose a new ZIP path: {path}",
+  "output_in_inputs": "The destination cannot be one of the input files.",
+  "file_too_large": "File exceeds the 128 MiB limit; select individual exported photo files.",
+  "scan_budget": "File is too complex or damaged to scan within the safety limit.",
+  "too_many_photos": "File contains more than 10,000 images.",
+  "read_error": "Cannot read this file. Check permissions and try again.",
+  "no_photos": "No complete JPEG found. Select exported photo files such as PM9_*, not GameProgress or SouvenirRecording.",
+  "summary": "Recovered {photos} photos from {files} files; skipped {skipped}; failed {failed}. ZIP: {path}",
+  "error": "Error: {detail}",
+  "cancelled": "Cancelled; incomplete output removed."
+}
