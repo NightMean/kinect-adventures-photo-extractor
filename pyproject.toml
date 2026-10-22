@@ -9,8 +9,15 @@ description = "Recover embedded Kinect Adventures JPEG photos locally"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 
+[project.optional-dependencies]
+gui = ["Gooey==1.0.8.1", "six>=1.16,<2"]
+build = ["Gooey==1.0.8.1", "six>=1.16,<2", "PyInstaller>=6.16,<7"]
+
 [project.scripts]
 kinect-photos = "kinect_photos.cli:main"
+
+[project.gui-scripts]
+kinect-photos-gui = "kinect_photos.gui:launch"
 
 [tool.setuptools.packages.find]
 where = ["src"]

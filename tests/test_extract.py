@@ -45,7 +45,7 @@ class CliTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
+        self.root = Path(self.temp.name).resolve()
         self.source = self.root / 'PM9_test'
         self.data = base64.b64decode(CASES[0]['data'])
         self.source.write_bytes(b'container' + self.data + b'padding')

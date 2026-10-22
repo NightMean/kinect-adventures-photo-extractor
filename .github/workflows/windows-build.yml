@@ -1,0 +1,24 @@
+name: Build Windows app
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e ".[build]"
+      - run: python -m unittest discover -s tests -v
+      - run: python tools/build_windows.py
+      - name: Exercise packaged recovery
+        run: |
+          python -c "from pathlib import Path; import json,base64; p=Path('.scratch/input/nested'); p.mkdir(parents=True); (p/'PM9_demo').write_bytes(base64.b64decode(json.loads(Path('tests/fixtures.json').read_text())[0]['data']))"
+          & ./dist/desktop/KinectPhotos.exe --ignore-gooey --input-folder .scratch/input --output-folder .scratch/output
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -c "from pathlib import Path; import json,base64; expected=base64.b64decode(json.loads(Path('tests/fixtures.json').read_text())[0]['data']); assert Path('.scratch/output/PM9_demo.jpg').read_bytes()==expected"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KinectPhotos-Windows
+          path: dist/desktop/KinectPhotos.exe
