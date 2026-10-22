@@ -11,7 +11,7 @@ from .identity import app_identity
 def show_guide(parent):
     dialog = wx.Dialog(parent, title=TEXT['guide_title'], size=(650, 620), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
     layout = wx.BoxSizer(wx.VERTICAL)
-    body = '\n\n'.join(TEXT[key] for key in ['guide_intro', 'guide_step1', 'guide_step2', 'guide_step3', 'guide_step4', 'guide_dates', 'guide_limits'])
+    body = '\n\n'.join(TEXT[key] for key in ['guide_step1', 'guide_step2', 'guide_step3', 'guide_step4', 'guide_legacy'])
     control = wx.TextCtrl(dialog, value=body, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.BORDER_NONE)
     control.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
     layout.Add(control, 1, wx.EXPAND | wx.ALL, 20)
@@ -30,13 +30,13 @@ class AboutDialog(wx.Dialog):
         self.SetIcon(icon)
         bitmap = wx.Bitmap()
         bitmap.CopyFromIcon(icon)
-        layout.Add(wx.StaticBitmap(self, bitmap=bitmap), 0, wx.ALIGN_CENTER_HORIZONTAL | wx.TOP, 24)
+        layout.Add(wx.StaticBitmap(self, bitmap=bitmap), 0, wx.ALIGN_CENTER_HORIZONTAL | wx.TOP, 10)
         for key, values in [('about_name', {}), ('about_version', {'version': identity.version}),
                             ('about_author', {'author': identity.author})]:
             label = wx.StaticText(self, label=TEXT[key].format(**values), style=wx.ALIGN_CENTER)
             if key == 'about_name':
                 label.SetFont(label.GetFont().Bold())
-            layout.Add(label, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.LEFT | wx.RIGHT | wx.TOP, 14)
+            layout.Add(label, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.LEFT | wx.RIGHT | wx.TOP, 10)
         link = wx.adv.HyperlinkCtrl(self, label=TEXT['github_link'], url=identity.repository)
         layout.Add(link, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.TOP, 14)
         layout.Add(wx.StaticText(self, label=TEXT['about_license']), 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 14)
