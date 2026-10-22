@@ -44,7 +44,7 @@ embedded JPEG in an arbitrary file is a Kinect photo.
 
 ## Automatic desktop discovery
 
-The Gooey desktop app presents only input and output folders. It walks the full
+The wxPython desktop app takes an input folder and output folder. It walks the full
 input tree automatically, pruning links/junctions and the output subtree. A file
 is a candidate when its name starts with `PM9_` (case-insensitive), or it has a
 `CON `, `LIVE`, or `PIRS` header and title ID `4D5308ED` at offset `0x360`.
@@ -56,10 +56,21 @@ The original program uses a multiple-file chooser; recursive discovery is new.
 Desktop acceptance scanned 608 files from the main backup folder, discovered
 521 candidates, and recovered the same 511 exact-source, decodable JPGs with
 no failures. Ten title-matched non-photo packages were skipped. A rerun recovered
-zero new images and recognized all 511 existing outputs. The packaged GUI's
-two folder controls were inspected through Windows accessibility. Its Start
-button could not be exercised by the automation helper because window capture
-timed out; the packaged worker was exercised directly instead.
+zero new images and recognized all 511 existing outputs. The interactive catalog
+also found all 511 photos and parsed filename dates for every one. Dates include
+incorrect-looking console-clock years, so they are explicitly labelled rather
+than asserted to be verified capture times. Selected export was checked against
+exact source bytes. Windows GUI integration tests use a real wx event loop and
+native controls with synthetic files to exercise scan, preview, checkbox events,
+bulk selection, range selection, and selected export. These tests do not simulate
+physical mouse input through the operating system.
+
+Sorting is a view over immutable catalog indices: checks, Shift range anchors and
+focused photo identity survive both column orders. Dates sort by their displayed
+wall-clock values because console filename dates have no known timezone; unknown
+dates stay last. Space toggles the focused checkbox explicitly in the virtual list.
+Preview captions contain only the filename. Help owns export guidance and About;
+the idle export button remains hoverable to explain missing prerequisites.
 
 Recovered JPGs retain source names with portable character sanitization.
 Duplicate names get suffixes; exact matching output bytes are reused on reruns.
@@ -74,20 +85,22 @@ Discovery retains at most 200 error locations and a full error count. No absolut
 input root, image bytes, credentials or telemetry are persisted in the report.
 Each run writes a new report filename rather than overwriting previous reports.
 If report writing fails, the UI reports failure and preserves completed JPGs.
-There is no upload or crash-reporting backend. Gooey's in-window progress output
-is transient; the local JSON report is the retained diagnostic artifact.
+There is no upload or crash-reporting backend. In-window progress and scan errors
+are transient; the local JSON report is the retained extraction diagnostic artifact.
+Unexpected worker failures retain a bounded function/line trace in the copyable
+Details dialog, without source paths or arguments. A process crash before report
+publication does not produce a report; completed JPGs remain available.
 
-The GUI follows MotionPhoto2's Gooey integration. Gooey 1.0.8.1 imports `six`
-without declaring it, so the GUI extra lists `six` explicitly. Windows packaging
-uses PyInstaller's console bootloader with `hide_console='hide-early'` to keep
-the progress pipe available without leaving a console window on screen.
-The packaged worker runs with `--ignore-gooey`; that path must bypass opening
-another configuration window. Git identity is injected by the build spec.
-Gooey's Windows quote helper also mishandles trailing backslashes, including
-drive roots. The app locally replaces its three quote bindings with Python's
-standard Windows argument encoder. A regression test passes actual Gooey folder
-formatting through a real shell-free child process with drive roots, trailing
-separators, spaces, Unicode, and shell metacharacters.
+The GUI uses wxPython, Gooey's underlying toolkit, with an in-process background
+worker. Progress and pending preview requests are coalesced into bounded slots;
+stale preview results cannot replace the currently focused photo. Preview pixels
+are decoded with Pillow separately from the exact-byte export path. No Gooey
+worker subprocess or argument quoting workaround remains. Windows packaging uses
+PyInstaller's console bootloader with `hide_console='hide-early'` so command-line
+invocations retain stdout without leaving a console on screen for desktop users.
+Arguments invoke the headless folder workflow; no arguments open the GUI. Git
+identity is injected internally by the build spec; About shows the release version,
+author, and repository link without a commit suffix.
 
 ## Photo catalog and selection API
 

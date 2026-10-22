@@ -15,7 +15,7 @@ jobs:
       - name: Exercise packaged recovery
         run: |
           python -c "from pathlib import Path; import json,base64; p=Path('.scratch/input/nested'); p.mkdir(parents=True); (p/'PM9_demo').write_bytes(base64.b64decode(json.loads(Path('tests/fixtures.json').read_text())[0]['data']))"
-          & ./dist/desktop/KinectPhotos.exe --ignore-gooey --input-folder .scratch/input --output-folder .scratch/output
+          & ./dist/desktop/KinectPhotos.exe --input-folder .scratch/input --output-folder .scratch/output
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -c "from pathlib import Path; import json,base64; expected=base64.b64decode(json.loads(Path('tests/fixtures.json').read_text())[0]['data']); assert Path('.scratch/output/PM9_demo.jpg').read_bytes()==expected"
       - uses: actions/upload-artifact@v4

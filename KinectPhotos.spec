@@ -27,9 +27,9 @@ identity = VSVersionInfo(
         StringStruct('Comments', commit + ('-dirty' if dirty else '')),
     ])]), VarFileInfo([VarStruct('Translation', [1033, 1200])])],
 )
-resources = collect_data_files('gooey') + collect_data_files('kinect_photos')
+resources = collect_data_files('kinect_photos')
 resources += copy_metadata('kinect-adventures-photo-extractor')
-resources += copy_metadata('Gooey', recursive=True)
+resources += copy_metadata('wxPython', recursive=True) + copy_metadata('Pillow', recursive=True)
 resources += [(str(Path(SPECPATH) / 'LICENSE'), 'licenses/project')]
 resources += [(str(build_info), 'kinect_photos')]
 analysis = Analysis(['KinectPhotos.pyw'], datas=resources, hiddenimports=[],
@@ -37,4 +37,5 @@ analysis = Analysis(['KinectPhotos.pyw'], datas=resources, hiddenimports=[],
 archive = PYZ(analysis.pure)
 exe = EXE(archive, analysis.scripts, analysis.binaries, analysis.datas, [],
           name='KinectPhotos', debug=False, strip=False, upx=False,
-          console=True, hide_console='hide-early', version=identity)
+          console=True, hide_console='hide-early', version=identity,
+          icon=str(Path(SPECPATH) / 'src' / 'kinect_photos' / 'assets' / 'app.ico'))

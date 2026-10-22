@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kinect-adventures-photo-extractor"
-version = "0.1.0"
+version = "1.0.0"
 description = "Recover embedded Kinect Adventures JPEG photos locally"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 
 [project.optional-dependencies]
-gui = ["Gooey==1.0.8.1", "six>=1.16,<2"]
-build = ["Gooey==1.0.8.1", "six>=1.16,<2", "PyInstaller>=6.16,<7"]
+gui = ["wxPython>=4.2.3,<5", "Pillow>=10,<14"]
+build = ["wxPython>=4.2.3,<5", "Pillow>=10,<14", "PyInstaller>=6.16,<7"]
 
 [project.scripts]
 kinect-photos = "kinect_photos.cli:main"
@@ -23,4 +23,4 @@ kinect-photos-gui = "kinect_photos.gui:launch"
 where = ["src"]
 
 [tool.setuptools.package-data]
-kinect_photos = ["messages.json"]
+kinect_photos = ["messages.json", "assets/*.ico", "assets/*.svg"]

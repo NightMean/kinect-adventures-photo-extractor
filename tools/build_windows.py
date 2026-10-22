@@ -8,6 +8,21 @@ import subprocess
 import sys
 
 
+def build_icon(root: Path) -> None:
+    """Render the maintained vector into the app's multi-resolution Windows icon."""
+    import wx
+    import wx.svg
+    from PIL import Image
+
+    app = wx.App.Get() or wx.App(False)
+    assets = root / 'src' / 'kinect_photos' / 'assets'
+    vector = wx.svg.SVGimage.CreateFromFile(str(assets / 'app.svg'))
+    pixels = vector.ConvertToBitmap(width=256, height=256).ConvertToImage()
+    image = Image.frombytes('RGB', (256, 256), bytes(pixels.GetData()))
+    image.putalpha(Image.frombytes('L', (256, 256), bytes(pixels.GetAlpha())))
+    image.save(assets / 'app.ico', sizes=[(n, n) for n in (16, 24, 32, 48, 64, 128, 256)])
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('-V', '--version', action='version',
@@ -16,6 +31,7 @@ def main() -> int:
     if os.name != 'nt':
         parser.error('Build the Windows executable on Windows.')
     root = Path(__file__).resolve().parent.parent
+    build_icon(root)
     logs = root / 'build'
     logs.mkdir(exist_ok=True)
     log = logs / 'windows-build.log'
