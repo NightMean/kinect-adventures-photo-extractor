@@ -7,6 +7,8 @@ from pathlib import Path
 import subprocess
 import sys
 
+EXECUTABLE_NAME = 'KA_Photo_Extractor'
+
 
 def build_icon(root: Path) -> None:
     """Render the maintained vector into the app's multi-resolution Windows icon."""
@@ -48,14 +50,19 @@ def main() -> int:
     if result.returncode:
         print(f'Build failed ({result.returncode}). Log: {log}', file=sys.stderr)
         return result.returncode
-    destination = root / 'dist' / 'desktop' / 'KinectPhotos.exe'
+    destination = root / 'dist' / 'desktop' / f'{EXECUTABLE_NAME}.exe'
     destination.parent.mkdir(parents=True, exist_ok=True)
     try:
-        os.replace(root / 'build' / 'windows-dist' / 'KinectPhotos.exe', destination)
+        os.replace(root / 'build' / 'windows-dist' / f'{EXECUTABLE_NAME}.exe', destination)
     except OSError as exc:
         print(f'Cannot replace the executable. Close the app and retry. {exc}', file=sys.stderr)
         return 1
-    print(f"Built {root / 'dist' / 'desktop' / 'KinectPhotos.exe'}")
+    previous_name = destination.with_name('KinectPhotos.exe')
+    try:
+        previous_name.unlink(missing_ok=True)
+    except OSError as exc:
+        print(f'Warning: could not remove the previous executable {previous_name}: {exc}', file=sys.stderr)
+    print(f'Built {destination}')
     print(f'Build log: {log}')
     return 0
 

@@ -36,6 +36,6 @@ analysis = Analysis(['KinectPhotos.pyw'], datas=resources, hiddenimports=[],
                     hookspath=[], excludes=['numpy'], noarchive=False)
 archive = PYZ(analysis.pure)
 exe = EXE(archive, analysis.scripts, analysis.binaries, analysis.datas, [],
-          name='KinectPhotos', debug=False, strip=False, upx=False,
+          name='KA_Photo_Extractor', debug=False, strip=False, upx=False,
           console=True, hide_console='hide-early', version=identity,
           icon=str(Path(SPECPATH) / 'src' / 'kinect_photos' / 'assets' / 'app.ico'))
