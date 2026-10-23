@@ -1,9 +1,87 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
-  <rect x="8" y="8" width="240" height="240" rx="54" fill="#28733c"/>
-  <path d="M68 72h29l12-18h40l12 18h27a22 22 0 0 1 22 22v87a22 22 0 0 1-22 22H68a22 22 0 0 1-22-22V94a22 22 0 0 1 22-22z" fill="#f5faef"/>
-  <circle cx="128" cy="136" r="46" fill="#28733c"/>
-  <circle cx="128" cy="136" r="30" fill="#97cd53"/>
-  <path d="M106 152l17-26 15 18 12-10 10 18z" fill="#f5faef"/>
-  <circle cx="140" cy="121" r="7" fill="#f5faef"/>
-  <path d="M202 28l6 16 17 6-17 6-6 17-6-17-17-6 17-6z" fill="#f5b941"/>
+  <defs>
+    <linearGradient id="background" x1="18" y1="22" x2="230" y2="240" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3b914d"/>
+      <stop offset="0.55" stop-color="#2e7c40"/>
+      <stop offset="1" stop-color="#205f31"/>
+    </linearGradient>
+    <linearGradient id="sensorBody" x1="0" y1="101" x2="0" y2="130" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#303733"/>
+      <stop offset="0.4" stop-color="#171c19"/>
+      <stop offset="1" stop-color="#090c0a"/>
+    </linearGradient>
+    <linearGradient id="sensorGlass" x1="0" y1="108" x2="0" y2="122" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#54785d"/>
+      <stop offset="0.48" stop-color="#244b31"/>
+      <stop offset="1" stop-color="#163622"/>
+    </linearGradient>
+    <linearGradient id="standBody" x1="0" y1="129" x2="0" y2="159" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#252c28"/>
+      <stop offset="0.55" stop-color="#111613"/>
+      <stop offset="1" stop-color="#080b09"/>
+    </linearGradient>
+    <linearGradient id="badge" x1="170" y1="161" x2="221" y2="235" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffe084"/>
+      <stop offset="0.52" stop-color="#f7bd4a"/>
+      <stop offset="1" stop-color="#e69a27"/>
+    </linearGradient>
+    <linearGradient id="photoSky" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#b8d9d0"/>
+      <stop offset="1" stop-color="#f4d99b"/>
+    </linearGradient>
+    <linearGradient id="photoFrame" x1="0" y1="45" x2="0" y2="190" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff1ce"/>
+      <stop offset="0.48" stop-color="#e8d6aa"/>
+      <stop offset="1" stop-color="#c6a973"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="8" y="8" width="240" height="240" rx="54" fill="url(#background)"/>
+  <rect x="9" y="9" width="238" height="238" rx="53" fill="none" stroke="#a2d28e" stroke-opacity="0.28" stroke-width="2"/>
+  <path d="M28 69a42 42 0 0 1 42-42h116" fill="none" stroke="#d1edb9" stroke-opacity="0.12" stroke-linecap="round" stroke-width="3"/>
+
+  <rect x="20" y="48" width="216" height="142" rx="10" fill="#0a351b" opacity="0.42"/>
+  <rect x="18" y="45" width="220" height="142" rx="10" fill="url(#photoFrame)" stroke="#fff4d7" stroke-opacity="0.8" stroke-width="1.4"/>
+  <rect x="28" y="55" width="200" height="122" rx="4" fill="url(#photoSky)" stroke="#8b7654" stroke-opacity="0.58" stroke-width="1.2"/>
+  <path d="M31 145c31-10 51-6 78-2 35 6 73-9 116-3v34H31z" fill="#a7bd92" opacity="0.62"/>
+  <path d="M31 158c34-8 58 1 86 0 32-1 66-11 108-5v23H31z" fill="#8ba37a" opacity="0.44"/>
+  <rect x="75" y="49" width="106" height="1.8" rx="0.9" fill="#a48b5e" opacity="0.55"/>
+  <rect x="94" y="181" width="68" height="2" rx="1" fill="#967c51" opacity="0.55"/>
+
+  <g transform="translate(23.04 12.5) scale(0.82)">
+  <rect x="26" y="103" width="205" height="28" rx="7" fill="#0a351b" opacity="0.32"/>
+  <path d="M113 129h30l7 18h-44z" fill="url(#standBody)" stroke="#111714" stroke-width="0.8"/>
+  <path d="M99 147h58v9q0 3-3 3h-52q-3 0-3-3z" fill="url(#standBody)" stroke="#111714" stroke-width="0.8"/>
+  <path d="M119 132h18" fill="none" stroke="#68756c" stroke-opacity="0.42" stroke-linecap="round" stroke-width="1.2"/>
+  <path d="M104 149h48" fill="none" stroke="#66736a" stroke-opacity="0.35" stroke-linecap="round" stroke-width="1"/>
+
+  <rect x="25.5" y="101.5" width="205" height="27.5" rx="6.5" fill="url(#sensorBody)" stroke="#46534a" stroke-width="0.9"/>
+  <path d="M35 105h186" fill="none" stroke="#a7b5a9" stroke-opacity="0.2" stroke-linecap="round" stroke-width="1.2"/>
+  <path d="M40 125h176" fill="none" stroke="#000" stroke-opacity="0.38" stroke-linecap="round" stroke-width="1"/>
+
+  <g stroke="#6e8572" stroke-width="0.8">
+    <circle cx="78.5" cy="115" r="6.5" fill="#111a14"/>
+    <circle cx="117.5" cy="115" r="6.5" fill="#111a14"/>
+    <circle cx="137.5" cy="115" r="6.5" fill="#111a14"/>
+  </g>
+  <g fill="url(#sensorGlass)">
+    <circle cx="78.5" cy="115" r="4.8"/>
+    <circle cx="117.5" cy="115" r="4.8"/>
+    <circle cx="137.5" cy="115" r="4.8"/>
+  </g>
+  <g fill="#e0f0d9" fill-opacity="0.56">
+    <ellipse cx="77" cy="113.3" rx="1.4" ry="0.9"/>
+    <ellipse cx="116" cy="113.3" rx="1.4" ry="0.9"/>
+    <ellipse cx="136" cy="113.3" rx="1.4" ry="0.9"/>
+  </g>
+  <circle cx="98.25" cy="115" r="2.4" fill="#0c1510" stroke="#657b69" stroke-width="0.6"/>
+  <circle cx="98.25" cy="115" r="1.2" fill="#87b97b"/>
+  </g>
+
+  <circle cx="199" cy="200" r="39" fill="#0c351a" opacity="0.28"/>
+  <circle cx="198" cy="198" r="36" fill="url(#badge)" stroke="#18552b" stroke-width="7"/>
+  <circle cx="198" cy="198" r="30.5" fill="none" stroke="#fff0b6" stroke-opacity="0.48" stroke-width="1.2"/>
+  <path d="M198 175v30m-12-12 12 12 12-12" fill="none" stroke="#245d32" stroke-linecap="round" stroke-linejoin="round" stroke-width="6.5"/>
+  <path d="M172 207h52v8q0 3-3 3h-46q-3 0-3-3z" fill="#245d32"/>
+  <path d="M176 208h44" fill="none" stroke="#b9d48a" stroke-opacity="0.55" stroke-linecap="round" stroke-width="1.3"/>
 </svg>
